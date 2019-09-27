@@ -131,66 +131,6 @@ class PrepareDirectories(SimpleTask):
 
         open('%(item_dir)s/%(warc_file_base)s.warc' % item, 'w').close()
 
-
-class Deduplicate(SimpleTask):
-    def __init__(self):
-        SimpleTask.__init__(self, "Deduplicate")
-
-    def process(self, item):
-        digests = {}
-        input_filename = "%(item_dir)s/%(warc_file_base)s.warc" % item
-        output_filename = "%(item_dir)s/%(warc_file_base)s-deduplicated.warc.gz" % item
-        with open(input_filename, 'rb') as f_in, \
-                open(output_filename, 'wb') as f_out:
-            writer = WARCWriter(filebuf=f_out, gzip=True)
-            for record in ArchiveIterator(f_in):
-                url = record.rec_headers.get_header('WARC-Target-URI')
-                if url is not None and url.startswith('<'):
-                    url = re.search('^<(.+)>$', url).group(1)
-                    record.rec_headers.replace_header('WARC-Target-URI', url)
-                if record.rec_headers.get_header('WARC-Type') == 'response' \
-                        and int(record.rec_headers.get_header('Content-Length')) > 1000:
-                    print('Checking', record.rec_headers.get_header('WARC-Target-URI'))
-                    digest = record.rec_headers.get_header('WARC-Payload-Digest')
-                    if digest in digests:
-                        writer.write_record(
-                            self._record_response_to_revisit(writer, record,
-                                                             digests[digest])
-                        )
-                    else:
-                        digests[digest] = (
-                            record.rec_headers.get_header('WARC-Record-ID'),
-                            record.rec_headers.get_header('WARC-Date'),
-                            record.rec_headers.get_header('WARC-Target-URI')
-                        )
-                        writer.write_record(record)
-                elif record.rec_headers.get_header('WARC-Type') == 'warcinfo':
-                    record.rec_headers.replace_header('WARC-Filename', '%(warc_file_base)s-deduplicated.warc.gz')
-                    writer.write_record(record)
-                else:
-                    writer.write_record(record)
-
-    def _record_response_to_revisit(self, writer, record, duplicate):
-        print('Found duplicate with', duplicate)
-        warc_headers = record.rec_headers
-        warc_headers.replace_header('WARC-Refers-To', duplicate[0])
-        warc_headers.replace_header('WARC-Refers-To-Date', duplicate[1])
-        warc_headers.replace_header('WARC-Refers-To-Target-URI', duplicate[2])
-        warc_headers.replace_header('WARC-Type', 'revisit')
-        warc_headers.replace_header('WARC-Truncated', 'length')
-        warc_headers.replace_header('WARC-Profile',
-                                    'http://netpreserve.org/warc/1.0/' \
-                                    'revisit/identical-payload-digest')
-        warc_headers.remove_header('WARC-Block-Digest')
-        warc_headers.remove_header('Content-Length')
-        return writer.create_warc_record(
-            record.rec_headers.get_header('WARC-Target-URI'),
-            'revisit',
-            warc_headers=warc_headers,
-            http_headers=record.http_headers
-        )
-
-
 class MoveFiles(SimpleTask):
     def __init__(self):
         SimpleTask.__init__(self, 'MoveFiles')
@@ -208,7 +148,7 @@ def get_hash(filename):
 
 CWD = os.getcwd()
 PIPELINE_SHA1 = get_hash(os.path.join(CWD, 'pipeline.py'))
-LUA_SHA1 = get_hash(os.path.join(CWD, 'tinypic.lua'))
+LUA_SHA1 = get_hash(os.path.join(CWD, 'drawr.lua'))
 
 def stats_id_function(item):
     d = {
@@ -235,7 +175,7 @@ class WgetArgs(object):
             '-U', USER_AGENT,
             '-nv',
             '--no-cookies',
-            '--lua-script', 'tinypic.lua',
+            '--lua-script', 'drawr.lua',
             '-o', ItemInterpolation('%(item_dir)s/wget.log'),
             '--no-check-certificate',
             '--output-document', ItemInterpolation('%(item_dir)s/wget.tmp'),
@@ -247,14 +187,13 @@ class WgetArgs(object):
             '--page-requisites',
             '--timeout', '30',
             '--tries', 'inf',
-            '--domains', 'tinypic.com',
+            '--domains', 'drawr.net',
             '--span-hosts',
-            '--header', 'Referer: http://tinypic.com/',
             '--waitretry', '30',
             '--warc-file', ItemInterpolation('%(item_dir)s/%(warc_file_base)s'),
             '--warc-header', 'operator: Archive Team',
-            '--warc-header', 'tinypic-dld-script-version: ' + VERSION,
-            '--warc-header', ItemInterpolation('tinypic-item: %(item_name)s'),
+            '--warc-header', 'drawr-dld-script-version: ' + VERSION,
+            '--warc-header', ItemInterpolation('drawr-item: %(item_name)s'),
             '--no-warc-compression'
         ]
 
@@ -265,17 +204,13 @@ class WgetArgs(object):
         item['item_type'] = item_type
         item['item_value'] = item_value
 
-        def add_tinypic_id(a, b):
-            wget_args.extend(['--warc-header', 'tinypic-photo-silo_id: {}_{}'.format(a, b)])
-            wget_args.append('http://s{}.tinypic.com/{}_th.jpg'.format(a, b))
-
         if item_type == 'ids':
             start, end = item_value.split('-', 1)
             for i in range(int(start), int(end)+1):
                 for j in range(2, 10):
-                    add_tinypic_id(j, self.int_to_str(i))
+                    add_drawr_id(j, self.int_to_str(i))
                 for j in range(int(i)*3, int(i)*3+3):
-                    add_tinypic_id(1, self.int_to_str(j))
+                    add_drawr_id(1, self.int_to_str(j))
         else:
             raise Exception('Unknown item')
 
@@ -294,10 +229,10 @@ class WgetArgs(object):
 # This will be shown in the warrior management panel. The logo should not
 # be too big. The deadline is optional.
 project = Project(
-    title = 'tinypic',
+    title = 'drawr',
     project_html = '''
-    <img class="project-logo" alt="logo" src="https://www.archiveteam.org/images/7/74/Tinypic-logo.jpg" height="50px"/>
-    <h2>tinypic.com <span class="links"><a href="http://www.tinypic.com/">Website</a> &middot; <a href="http://tracker.archiveteam.org/tinypic/">Leaderboard</a></span></h2>
+    <img class="project-logo" alt="logo" src="" height="50px"/>
+    <h2>drawr.net <span class="links"><a href="http://www.drawr.net/">Website</a> &middot; <a href="http://tracker.archiveteam.org/drawr/">Leaderboard</a></span></h2>
     '''
 )
 
@@ -305,7 +240,7 @@ pipeline = Pipeline(
     CheckIP(),
     GetItemFromTracker('http://%s/%s' % (TRACKER_HOST, TRACKER_ID), downloader,
         VERSION),
-    PrepareDirectories(warc_prefix='tinypic'),
+    PrepareDirectories(warc_prefix='drawr'),
     WgetDownload(
         WgetArgs(),
         max_tries=2,
@@ -317,12 +252,11 @@ pipeline = Pipeline(
             'warc_file_base': ItemValue('warc_file_base'),
         }
     ),
-    Deduplicate(),
     PrepareStatsForTracker(
         defaults={'downloader': downloader, 'version': VERSION},
         file_groups={
             'data': [
-                ItemInterpolation('%(item_dir)s/%(warc_file_base)s-deduplicated.warc.gz')
+                ItemInterpolation('%(item_dir)s/%(warc_file_base)s.warc.gz')
             ]
         },
         id_function=stats_id_function,
@@ -336,7 +270,7 @@ pipeline = Pipeline(
             downloader=downloader,
             version=VERSION,
             files=[
-                ItemInterpolation('%(data_dir)s/%(warc_file_base)s-deduplicated.warc.gz')
+                ItemInterpolation('%(data_dir)s/%(warc_file_base)s.warc.gz')
             ],
             rsync_target_source_path=ItemInterpolation('%(data_dir)s/'),
             rsync_extra_args=[
