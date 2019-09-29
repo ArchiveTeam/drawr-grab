@@ -65,7 +65,7 @@ if not WGET_LUA:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20190927.01'
+VERSION = '20190929.01'
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'drawr'
 TRACKER_HOST = 'tracker.archiveteam.org'
@@ -194,7 +194,6 @@ class WgetArgs(object):
             '--warc-header', 'operator: Archive Team',
             '--warc-header', 'drawr-dld-script-version: ' + VERSION,
             '--warc-header', ItemInterpolation('drawr-item: %(item_name)s'),
-            '--no-warc-compression'
         ]
 
         item_name = item['item_name']
@@ -231,7 +230,7 @@ class WgetArgs(object):
 project = Project(
     title = 'drawr',
     project_html = '''
-    <img class="project-logo" alt="logo" src="" height="50px"/>
+    <img class="project-logo" alt="logo" src="https://www.archiveteam.org/images/8/8a/Drawr_Logo.png" height="50px"/>
     <h2>drawr.net <span class="links"><a href="http://www.drawr.net/">Website</a> &middot; <a href="http://tracker.archiveteam.org/drawr/">Leaderboard</a></span></h2>
     '''
 )
@@ -262,7 +261,7 @@ pipeline = Pipeline(
         id_function=stats_id_function,
     ),
     MoveFiles(),
-    LimitConcurrent(NumberConfigValue(min=1, max=20, default='20',
+    LimitConcurrent(NumberConfigValue(min=1, max=20, default='2',
         name='shared:rsync_threads', title='Rsync threads',
         description='The maximum number of concurrent uploads.'),
         UploadWithTracker(

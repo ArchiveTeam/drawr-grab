@@ -150,6 +150,25 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         io.stdout:write("New profile found " .. userprofile .. " with link " .. userprofilelink .. "\n")
       end
     end
+    if string.match(url, "show%.php") then
+       for sn in string.gmatch(html2, 'jsel_plyr_sn ="([a-zA-Z0-9_-%.]+)"') do
+         --io.stdout:write(sn .. "\n")
+         drawrservername = sn
+       end
+       for plyrid in string.gmatch(html2, 'jsel_plyr_uid="([0-9]+)"') do
+         --io.stdout:write(plyrid .. "\n")
+         playeruid = plyrid
+       end
+       for plyrfn in string.gmatch(html2, 'jsel_plyr_fn ="([a-zA-Z0-9]+)"') do
+         --io.stdout:write(plyrfn .. "\n")
+         playerfn = plyrfn
+       end
+       --io.stdout:write(drawrservername .. " " .. playeruid .. " " .. playerfn .. "\n")
+       playfilelink = "http://" .. drawrservername .. "/draw/img/" .. playeruid .."/" .. playerfn .. ".gz"
+       io.stdout:write("Found play file " .. playfilelink .. "\n")
+       table.insert(urls, { url=playfilelink })
+    end
+
     html = read_file(file)
     for newurl in string.gmatch(string.gsub(html, "&quot;", '"'), '([^"]+)') do
       checknewurl(newurl)
