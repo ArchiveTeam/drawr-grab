@@ -63,7 +63,7 @@ allowed = function(url, parenturl)
     end
   end
 
-  if string.match(url, "^https?://img[0-9]+%.drawr%.net/draw/") then
+  if string.match(url, "^https?://[^0-9]+[0-9]+%.drawr%.net/draw/") then
     return true
   end
 
@@ -141,8 +141,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
   end
 
+  if string.match(url, "150x150.png$") then
+    check(string.gsub(url, "150x150", "150xth"))
+  end
+
   if allowed(url, nil)
-      and not string.match(url, "^https?://img[0-9]+%.drawr%.net/") then
+      and not (string.match(url, "%.jpg") or string.match(url, "%.png") or string.match(url, "%.gz")) then
     html = read_file(file)
     if string.match(url, "^https?://[^/]*drawr%.net/show%.php%?id=[0-9]+$") then
       local sn = string.match(html, 'jsel_plyr_sn%s*=%s*"([a-zA-Z0-9_-%.]+)"')
@@ -150,7 +154,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local fn = string.match(html, 'jsel_plyr_fn%s*=%s*"([a-zA-Z0-9]+)"')
       check("http://" .. sn .. "/draw/img/" .. uid .. "/" .. fn .. ".xml")
       check("http://" .. sn .. "/draw/img/" .. uid .. "/" .. fn .. ".gz")
-      check("http://" .. sn .. "/draw/img/" .. uid .. "/" .. fn .. "_150x150.png")
     end
     for newurl in string.gmatch(string.gsub(html, "&quot;", '"'), '([^"]+)') do
       checknewurl(newurl)
@@ -217,6 +220,9 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
   if status_code >= 500
       or (status_code >= 400 and status_code ~= 404)
       or status_code  == 0 then
+    if string.match(url["url"], "150xth%.png$") then
+      return wget.actions.EXIT
+    end
     io.stdout:write("Server returned "..http_stat.statcode.." ("..err.."). Sleeping.\n")
     io.stdout:flush()
     local maxtries = 10
