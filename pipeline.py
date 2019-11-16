@@ -56,7 +56,7 @@ if not WGET_LUA:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20191116.01'
+VERSION = '20191116.02'
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'drawr'
 TRACKER_HOST = 'tracker.archiveteam.org'
@@ -197,10 +197,8 @@ class WgetArgs(object):
         if item_type == 'ids':
             start, end = item_value.split('-', 1)
             for i in range(int(start), int(end)+1):
-                for j in range(2, 10):
-                    add_drawr_id(j, self.int_to_str(i))
-                for j in range(int(i)*3, int(i)*3+3):
-                    add_drawr_id(1, self.int_to_str(j))
+                wget_args.extend(['--warc-header', 'drawr-drawing: ' + str(i)])
+                wget_args.append('http://drawr.net/show.php?id=' + str(i))
         else:
             raise Exception('Unknown item')
 
