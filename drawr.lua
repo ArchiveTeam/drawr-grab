@@ -146,7 +146,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   end
 
   if allowed(url, nil)
-      and not (string.match(url, "%.jpg") or string.match(url, "%.png") or string.match(url, "%.gz")) then
+      and not (string.match(url, "%.png$") or string.match(url, "%.gz$")) then
     html = read_file(file)
     if string.match(url, "^https?://[^/]*drawr%.net/show%.php%?id=[0-9]+$") then
       local sn = string.match(html, 'jsel_plyr_sn%s*=%s*"([a-zA-Z0-9_-%.]+)"')
