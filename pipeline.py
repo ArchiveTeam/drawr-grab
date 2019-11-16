@@ -17,12 +17,6 @@ import sys
 import time
 import string
 
-sys.path.insert(0, os.getcwd())
-
-import warcio
-from warcio.archiveiterator import ArchiveIterator
-from warcio.warcwriter import WARCWriter
-
 import seesaw
 from seesaw.externalprocess import WgetDownload
 from seesaw.pipeline import Pipeline
@@ -31,9 +25,6 @@ from seesaw.util import find_executable
 
 if StrictVersion(seesaw.__version__) < StrictVersion('0.8.5'):
     raise Exception('This pipeline needs seesaw version 0.8.5 or higher.')
-
-if warcio.__version__ != '1.7.1':
-    raise Exception('Warcio should be version 1.7.1.')
 
 
 ###########################################################################
@@ -65,7 +56,7 @@ if not WGET_LUA:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20190929.01'
+VERSION = '20191116.01'
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'drawr'
 TRACKER_HOST = 'tracker.archiveteam.org'
@@ -136,8 +127,8 @@ class MoveFiles(SimpleTask):
         SimpleTask.__init__(self, 'MoveFiles')
 
     def process(self, item):
-        os.rename('%(item_dir)s/%(warc_file_base)s-deduplicated.warc.gz' % item,
-              '%(data_dir)s/%(warc_file_base)s-deduplicated.warc.gz' % item)
+        os.rename('%(item_dir)s/%(warc_file_base)s.warc.gz' % item,
+              '%(data_dir)s/%(warc_file_base)s.warc.gz' % item)
 
         shutil.rmtree('%(item_dir)s' % item)
 

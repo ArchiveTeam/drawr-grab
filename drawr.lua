@@ -32,7 +32,7 @@ end
 allowed = function(url, parenturl)
   if string.match(url, "'+")
       or string.match(url, "[<>\\%*%$;%^%[%],%(%){}]")
-      or string.match(url, "^https?://www%.w3%.org")
+      --[[or string.match(url, "^https?://www%.w3%.org")
       or string.match(url, "^http://drawr%.net/[^/]*%.php$")
       or string.match(url, "^http://drawr%.net/api/")
       or string.match(url, "^http://drawr%.net/login%.php")
@@ -42,7 +42,7 @@ allowed = function(url, parenturl)
       or string.match(url, "^http://drawr%.net/favter%.php")
       or string.match(url, "^http://drawr%.net/embed%.php")
       or string.match(url, "^http://drawr%.net/[a-zA-Z0-9-_]+$")
-      or string.match(url, "^http://drawr%.net/twitdrawr.php") then
+      or string.match(url, "^http://drawr%.net/twitdrawr.php")]] then
     return false
   end
 
@@ -63,7 +63,7 @@ allowed = function(url, parenturl)
     end
   end
 
-  if string.match(url, "^http://drawr%.net/") then
+  if string.match(url, "^https?://img[0-9]+%.drawr%.net/draw/") then
     return true
   end
 
@@ -140,9 +140,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check(string.match(url, "^(https?://.+/)")..newurl)
     end
   end
+
+  if string.match(url, "^https?://img[0-9]+%.drawr%.net/draw/.+%.png$") then
+    check()
+
   if allowed(url, nil) and not (string.match(url, "%.jpg$") or string.match(url, "%.png$")) then
-    html2 = read_file(file)
-    for userprofile in string.gmatch(html2, 'mgnRight10"><a href="/([a-zA-Z0-9_-]+)">') do
+    html = read_file(file)
+    for userprofile in string.gmatch(html, 'mgnRight10"><a href="/([a-zA-Z0-9_-]+)">') do
       if userprofile ~= username then
         username = userprofile
         userprofilelink = "http://drawr.net/"..username
@@ -151,25 +155,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
     if string.match(url, "show%.php") then
-       for sn in string.gmatch(html2, 'jsel_plyr_sn ="([a-zA-Z0-9_-%.]+)"') do
-         --io.stdout:write(sn .. "\n")
+       for sn in string.gmatch(html, 'jsel_plyr_sn ="([a-zA-Z0-9_-%.]+)"') do
          drawrservername = sn
        end
-       for plyrid in string.gmatch(html2, 'jsel_plyr_uid="([0-9]+)"') do
-         --io.stdout:write(plyrid .. "\n")
+       for plyrid in string.gmatch(html, 'jsel_plyr_uid="([0-9]+)"') do
          playeruid = plyrid
        end
-       for plyrfn in string.gmatch(html2, 'jsel_plyr_fn ="([a-zA-Z0-9]+)"') do
-         --io.stdout:write(plyrfn .. "\n")
+       for plyrfn in string.gmatch(html, 'jsel_plyr_fn ="([a-zA-Z0-9]+)"') do
          playerfn = plyrfn
        end
-       --io.stdout:write(drawrservername .. " " .. playeruid .. " " .. playerfn .. "\n")
        playfilelink = "http://" .. drawrservername .. "/draw/img/" .. playeruid .."/" .. playerfn .. ".gz"
        io.stdout:write("Found play file " .. playfilelink .. "\n")
        table.insert(urls, { url=playfilelink })
     end
-
-    html = read_file(file)
     for newurl in string.gmatch(string.gsub(html, "&quot;", '"'), '([^"]+)') do
       checknewurl(newurl)
     end
