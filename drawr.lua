@@ -163,6 +163,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     html = read_file(file)
     if string.match(url, "^https?://[^/]*drawr%.net/show%.php%?id=[0-9]+$") then
       local sn = string.match(html, 'jsel_plyr_sn%s*=%s*"([a-zA-Z0-9_-%.]+)"')
+      if sn == nil then
+        if string.match(html, "は、この絵を フレンドのみ公開 にしています") then
+          io.stdout:write("Private drawing, skipping.\n")
+          io.stdout:flush()
+          return urls
+        end
+        io.stdout:write("Could not extract information.\n")
+        io.stdout:flush()
+        abortgrab = true
+      end
       local uid = string.match(html, 'jsel_plyr_uid%s*=%s*"([0-9]+)"')
       local fn = string.match(html, 'jsel_plyr_fn%s*=%s*"([a-zA-Z0-9]+)"')
       check("http://" .. sn .. "/draw/img/" .. uid .. "/" .. fn .. ".xml")
