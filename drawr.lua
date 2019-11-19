@@ -158,7 +158,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     os.remove(output)
   end
 
-  if allowed(url, nil)
+  if allowed(url, nil) and status_code == 200
       and not (string.match(url, "%.png$") or string.match(url, "%.gz$")) then
     html = read_file(file)
     if string.match(url, "^https?://[^/]*drawr%.net/show%.php%?id=[0-9]+$") then
