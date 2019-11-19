@@ -1,7 +1,7 @@
-pixiv-grab
+drawr-grab
 =============
 
-More information about the archiving project can be found on the ArchiveTeam wiki: [Pixiv Chat](http://archiveteam.org/index.php?title=Pixiv Chat)
+More information about the archiving project can be found on the ArchiveTeam wiki: [Drawr](http://archiveteam.org/index.php?title=Drawr)
 
 Setup instructions
 =========================
@@ -15,7 +15,7 @@ In most of the below cases, there will be a web interface running at http://loca
 Running with a warrior
 -------------------------
 
-Follow the [instructions on the ArchiveTeam wiki](http://archiveteam.org/index.php?title=Warrior) for installing the Warrior, and select the "Pixiv Chat" project in the Warrior interface.
+Follow the [instructions on the ArchiveTeam wiki](http://archiveteam.org/index.php?title=Warrior) for installing the Warrior, and select the "Drawr" project in the Warrior interface.
 
 Running without a warrior
 -------------------------
@@ -58,17 +58,22 @@ Distribution-specific setup
     adduser --system --group --shell /bin/bash archiveteam
     apt-get update && apt-get install -y git-core libgnutls-dev lua5.1 liblua5.1-0 liblua5.1-0-dev screen python-dev python-pip bzip2 zlib1g-dev flex autoconf
     pip install --upgrade seesaw
-    su -c "cd /home/archiveteam; git clone https://github.com/ArchiveTeam/pixiv-grab.git; cd pixiv-grab; ./get-wget-lua.sh" archiveteam
-    screen su -c "cd /home/archiveteam/pixiv-grab/; run-pipeline pipeline.py --concurrent 2 --address '127.0.0.1' YOURNICKHERE" archiveteam
+    su -c "cd /home/archiveteam; git clone https://github.com/ArchiveTeam/drawr-grab.git; cd drawr-grab; ./get-wget-lua.sh" archiveteam
+    screen su -c "cd /home/archiveteam/drawr-grab/; run-pipeline pipeline.py --concurrent 2 --address '127.0.0.1' YOURNICKHERE" archiveteam
     [... ctrl+A D to detach ...]
 
-In __Debian Jessie__, the `libgnutls-dev` package was renamed to `libgnutls28-dev`. So, you need to do the following instead:
+In __Debian Jessie, Ubuntu 18.04 Bionic and above__, the `libgnutls-dev` package was renamed to `libgnutls28-dev`. So, you need to do the following instead:
 
     adduser --system --group --shell /bin/bash archiveteam
     apt-get update && apt-get install -y git-core libgnutls28-dev lua5.1 liblua5.1-0 liblua5.1-0-dev screen python-dev python-pip bzip2 zlib1g-dev flex autoconf
     [... pretty much the same as above ...]
 
 Wget-lua is also available on [ArchiveTeam's PPA](https://launchpad.net/~archiveteam/+archive/wget-lua) for Ubuntu.
+
+
+And you may also need to update your Python's warcio if you find screen detaching immediately after running the job in Ubuntu 18.04 Bionic and above:
+
+    pip install warcio --upgrade
 
 ### For CentOS:
 
@@ -92,7 +97,7 @@ You need Homebrew. Ensure that you have the OS X equivalent of bzip2 installed a
     pip install --upgrade seesaw
     [... pretty much the same as above ...]
 
-**There is a known issue with some packaged versions of rsync. If you get errors during the upload stage, pixiv-grab will not work with your rsync version.**
+**There is a known issue with some packaged versions of rsync. If you get errors during the upload stage, drawr-grab will not work with your rsync version.**
 
 This supposedly fixes it:
 
@@ -107,7 +112,16 @@ Ensure that you have the Arch equivalent of bzip2 installed as well.
 3. Run `pip2 install --upgrade seesaw`.
 4. Modify the run-pipeline script in seesaw to point at `#!/usr/bin/python2` instead of `#!/usr/bin/python`.
 5. `useradd --system --group users --shell /bin/bash --create-home archiveteam`
-6. `screen su -c "cd /home/archiveteam/pixiv-grab/; run-pipeline pipeline.py --concurrent 2 --address '127.0.0.1' YOURNICKHERE" archiveteam`
+6. `screen su -c "cd /home/archiveteam/drawr-grab/; run-pipeline pipeline.py --concurrent 2 --address '127.0.0.1' YOURNICKHERE" archiveteam`
+
+### For Alpine Linux:
+
+    apk add lua5.1 git python bzip2 bash rsync gcc libc-dev lua5.1-dev zlib-dev gnutls-dev autoconf flex make
+    python -m ensurepip
+    pip install -U seesaw
+    git clone https://github.com/ArchiveTeam/drawr-grab
+    cd drawr-grab; ./get-wget-lua.sh
+    run-pipeline pipeline.py --concurrent 2 --address '127.0.0.1' YOURNICKHERE
 
 ### For FreeBSD:
 
@@ -154,4 +168,5 @@ Are you a developer? Help write code for us! Look at our [developer documentatio
 
 ### Other problems
 
-Have an issue not listed here? Join us on IRC and ask! We can be found at irc.efnet.org #savepixiv.
+Have an issue not listed here? Join us on IRC and ask! We can be found at irc.efnet.org #drawrnomore.
+
