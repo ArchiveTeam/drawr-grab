@@ -145,6 +145,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     check(string.gsub(url, "150x150", "150xth"))
   end
 
+  if string.match(url, "%.gz$") then
+    local output = item_dir .. "/extracted.txt"
+    if os.execute("python3 get-repost-url.py " .. file .. " > " .. output) > 0 then
+      io.stdout:write("Got bad exit code.\n")
+      io.stdout:flush()
+      abortgrab = true
+    end
+    for line in io.open(output, "r"):lines() do
+      check(line)
+    end
+    os.remove(output)
+  end
+
   if allowed(url, nil)
       and not (string.match(url, "%.png$") or string.match(url, "%.gz$")) then
     html = read_file(file)
